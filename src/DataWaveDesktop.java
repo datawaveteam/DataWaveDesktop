@@ -8,8 +8,14 @@ import javax.sound.sampled.SourceDataLine;
  */
 public class DataWaveDesktop {
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args) throws Exception {
+        while(true){
+            SoundUtil.beep(600,1000);
+            Thread.sleep(101);
+            SoundUtil.beep(1500,1000);
+//            Thread.sleep(101);
+//            SoundUtil.createTone(900,100,50);
+        }
     }
 
 

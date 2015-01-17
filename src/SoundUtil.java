@@ -1,52 +1,93 @@
 import javax.sound.sampled.*;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Created by Stefan on 1/17/2015.
  */
 public class SoundUtil {
 
-    public static final int SAMPLERATE = 44100;
-    public static void createTone(int hz, int msecs, double vol) throws LineUnavailableException {
-        byte[] buffer = new byte[1];
+    Thread t;
+    int sr = 44100;
+    boolean isRunning = true;
 
-        //First param is float sampleRate
-        //Second param is int sample size in bits
-        //Third param is the int amount of channels
-        //Fourth param is boolean signed
-        //Fifth param is enable big endian
-        AudioFormat af = new AudioFormat(SAMPLERATE, 8, 1, true, false);
+    public void startTone()
+    {
+        isRunning = true;
+        t = new Thread() {
+            public void run() {
+                // set process priority
+                setPriority(Thread.MAX_PRIORITY);
+                int buffsize = AudioTrack.getMinBufferSize(sr,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT);
+                // create an audiotrack object
+                AudioTrack audioTrack = new AudioTrack(
+                        AudioManager.STREAM_MUSIC, sr,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT, buffsize,
+                        AudioTrack.MODE_STREAM);
 
+                short samples[] = new short[buffsize];
+                int amp = 10000;
+                double twopi = 8. * Math.atan(1.);
+                double fr = 440.f;
+                double ph = 0.0;
+                // start audio
+                audioTrack.play();
 
-        SourceDataLine sourceDataLine = AudioSystem.getSourceDataLine(af);
-        sourceDataLine.open(af);
-        sourceDataLine.start();
-        for (int i = 0; i < msecs * 8; i++) {
-            double angle = i / (SAMPLERATE / hz) * 2.0 * Math.PI;
-            buffer[0] = (byte) (Math.sin(angle) * 120.0 * vol);
-            sourceDataLine.write(buffer, 0, 1);
-        }
-        sourceDataLine.drain();
-        sourceDataLine.stop();
-        sourceDataLine.close();
+                while (isRunning) {
+
+                    for (int i = 0; i < buffsize; i++) {
+                        samples[i] = (short) (amp * Math.sin(ph));
+                        ph += twopi * fr / sr;
+                    }
+                    audioTrack.write(samples, 0, buffsize);
+                }
+                audioTrack.stop();
+                audioTrack.release();
+            }
+        };
+        t.start();
     }
 
+    public void stopTone(){
+        isRunning = false;
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        t = null;
+    }
+
+
+
+
+
+
+
+
+
+
     public static byte[] getMicrophoneBytes() throws LineUnavailableException {
-        AudioFormat format = new AudioFormat(SAMPLERATE,16,1,true,true);
+        AudioFormat format = new AudioFormat(SAMPLERATE, 16, 1, true, true);
         TargetDataLine microphone;
         Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
-        for (Mixer.Info info: mixerInfos){
+        for (Mixer.Info info : mixerInfos) {
             Mixer m = AudioSystem.getMixer(info);
             Line.Info[] lineInfos = m.getSourceLineInfo();
-            for (Line.Info lineInfo:lineInfos){
-                System.out.println (info.getName()+"---"+lineInfo);
+            for (Line.Info lineInfo : lineInfos) {
+                System.out.println(info.getName() + "---" + lineInfo);
                 Line line = m.getLine(lineInfo);
-                System.out.println("\t-----"+line);
+                System.out.println("\t-----" + line);
             }
             lineInfos = m.getTargetLineInfo();
-            for (Line.Info lineInfo:lineInfos){
-                System.out.println (m+"---"+lineInfo);
+            for (Line.Info lineInfo : lineInfos) {
+                System.out.println(m + "---" + lineInfo);
                 Line line = m.getLine(lineInfo);
-                System.out.println("\t-----"+line);
+                System.out.println("\t-----" + line);
 
             }
 
@@ -56,7 +97,7 @@ public class SoundUtil {
 
         microphone = (TargetDataLine) mixer.getLine(Port.Info.MICROPHONE);
         byte[] buffer = new byte[4096];
-        microphone.read(buffer,0,buffer.length);
+        microphone.read(buffer, 0, buffer.length);
 
         return buffer;
     }
