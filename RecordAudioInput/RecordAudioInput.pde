@@ -7,6 +7,7 @@ import ddf.minim.*;
 import ddf.minim.ugens.*;
 import ddf.minim.spi.*; // for AudioStream
 import ddf.minim.effects.*; // for low pass filter
+import java.net.URL;
 
 // a standard test string
 final String ENCODER_DATA = "It worked oh my gosh! My whole life, from conception to birth to death has its climax at this very moment. Thank you programming gods.";
@@ -39,8 +40,8 @@ Button backToMenuButton;
 // sending/server scene
 
 // client scene
-boolean typingURL = false;
-String URLTyped = "";
+boolean typingURL = true;
+String URLTyped = "http://wikipedia.org/wiki/radio";
 Button typingButton;
 Button sendURLButton;
 
@@ -121,7 +122,7 @@ void draw()
         println("read: \t" + ((char)read[i]) + " \t" + read[i]);
       }
     }
-     
+    
     backToMenuButton.draw();
   } else if(currentScene == clientScene) {
     background(255);
@@ -136,11 +137,27 @@ void draw()
   } else if(currentScene == browserScene) {
     background(255);
     
+    ArrayList<String> site = new ArrayList();
+    
+    for(int i = 0; i < website.length; i++) {
+      int len = website[i].length();
+      for(int j = 0; j < 40; j++) {
+        int p = 40 * j;
+        if(p < website[i].length())
+          site.add(website[i].substring(p));
+      }
+    }
+    for(int i = 0; i < site.size(); i++) {
+      fill(0);
+      textAlign(LEFT);
+      text(site.get(i), 5, (1+i)*textAscent());
+    }
+    /*
     for(int i = 0; i < website.length; i++) {
       fill(0);
       textAlign(LEFT);
-      text(website[i], 5, i*textAscent());
-    }
+      text(website[i], 5, (1+i)*textAscent());
+    }*/
     
     backToMenuButton.draw();
   }
@@ -168,9 +185,20 @@ void draw()
 void keyPressed() {
   if(currentScene == clientScene) {
     if(typingURL) {
-      if(keyCode == DELETE && URLTyped.length() > 0) {
-        URLTyped = URLTyped.substring(URLTyped.length()-1);
-      } else if(keyCode != SHIFT && keyCode != ENTER && keyCode != TAB) {
+      if((keyCode == DELETE || keyCode == BACKSPACE) && URLTyped.length() > 0) {
+        URLTyped = URLTyped.substring(0, URLTyped.length()-1);
+      } else if(keyCode == ENTER) {
+        website = loadStrings(URLTyped);
+        for(String line : website) {
+          //long start = millis();
+          fskModem.write(line);
+          //long end = millis();
+          //println((end - start)/1000.0);
+        }
+        
+        currentScene = browserScene;
+        println("switched to browser scene");
+      } else if(keyCode != SHIFT && keyCode != TAB) {
         URLTyped += key;
       }
     }
@@ -192,17 +220,34 @@ void mouseReleased() {
       typingURL = !typingURL;
     }
     if(sendURLButton.isHoveredOver()) {
-      //if(URLTyped.toLowerCase().contains('wikipedia')) {
-      //  
-      //}
       
-      website = loadStrings(URLTyped);
-      for(String line : website) {
-        //long start = millis();
-        fskModem.write(line);
-        //long end = millis();
-        //println((end - start)/1000.0);
+      try {
+        URL siteURL = new URL(URLTyped);
+        if(siteURL.getHost().contains("wikipedia.org")) {
+          String path = siteURL.getPath();
+          if(path.contains("wiki")) {
+            path = path.substring(6);
+            println("path: " + path);
+          }
+          
+          URLTyped = "http://104.43.130.130:5000/" + path;
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
       }
+      long start = millis();
+      //while(!mousePressed){
+      website = loadStrings(URLTyped);
+      int bytes = 0;
+      for(String line : website) {
+        
+        fskModem.write(line);
+        bytes += line.length();
+      }
+      //}
+      long end = millis();
+      println((end - start)/1000.0);
+      println(1/((end - start)/1000.0/bytes));
       
       currentScene = browserScene;
       println("switched to browser scene");
@@ -212,6 +257,11 @@ void mouseReleased() {
       println("switched to menu scene");
     }
   } else if(currentScene == serverScene) {
+    if(backToMenuButton.isHoveredOver()) {
+      currentScene = menuScene;
+      println("switched to menu scene");
+    }
+  } else if(currentScene == browserScene) {
     if(backToMenuButton.isHoveredOver()) {
       currentScene = menuScene;
       println("switched to menu scene");

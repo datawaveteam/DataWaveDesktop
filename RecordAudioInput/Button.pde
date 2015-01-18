@@ -2,7 +2,7 @@ class Button {
   
   public int x1, y1, x2, y2;
   public int w = 100, h = 50;
-  public color c = color(100, 100, 230), textC = color(255);
+  public color c = color(68, 255, 35, 100), textC = color(0);
   public String text;
   
   public Button(int x1, int y1, String text) {
@@ -26,18 +26,20 @@ class Button {
     // shadow
     noStroke();
     fill(0, 0, 0, 10);
-    rect(x1 + 1, y1 + 1, w, h, 2);
+    rect(x1 + 3, y1 + 3, w, h, 2);
     
     // box
     stroke(red(c), green(c), blue(c), 100);
     fill(c);
     if(isHoveredOver()) {
+      strokeWeight(5);
       fill(red(c) - 10, green(c) - 10, blue(c) - 10);
       if(mousePressed) {
         fill(red(c) - 20, green(c) - 20, blue(c) - 20);
       }
     }
     rect(x1, y1, w, h, 2);
+    strokeWeight(1);
     
     // text
     PFont tahoma = createFont("Arial Rounded MT Bold", 16);
