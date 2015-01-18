@@ -44,6 +44,8 @@ String URLTyped = "";
 Button typingButton;
 Button sendURLButton;
 
+// browser scene
+String[] website;
 
 void setup()
 {
@@ -111,11 +113,13 @@ void draw()
     
     textMode(CENTER);
     fill(0);
-    text("Waiting for URLs to send", width/2.0, height/2.0);
+    text("Waiting for URLs to request", width/2.0, height/2.0);
     
-    while(fskModem.available() > 0) {
-      int read = fskModem.read();
-      println("read: \t" + ((char)read) + " \t" + read);
+    byte[] read = fskModem.readBytes();
+    if(read != null) {
+      for(int i = 0; i < read.length; i++) {
+        println("read: \t" + ((char)read[i]) + " \t" + read[i]);
+      }
     }
      
     backToMenuButton.draw();
@@ -131,6 +135,12 @@ void draw()
     text(URLTyped + (typingURL && frameCount%60 < 30 ? "|" : ""), width/2.0, height/2.0);
   } else if(currentScene == browserScene) {
     background(255);
+    
+    for(int i = 0; i < website.length; i++) {
+      fill(0);
+      textAlign(LEFT);
+      text(website[i], 5, i*textAscent());
+    }
     
     backToMenuButton.draw();
   }
@@ -186,7 +196,7 @@ void mouseReleased() {
       //  
       //}
       
-      String[] website = loadStrings(URLTyped);
+      website = loadStrings(URLTyped);
       for(String line : website) {
         //long start = millis();
         fskModem.write(line);
