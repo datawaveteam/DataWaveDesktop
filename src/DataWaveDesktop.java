@@ -8,12 +8,4 @@ import javax.sound.sampled.SourceDataLine;
  */
 public class DataWaveDesktop {
 
-    public static void main(String[] args) {
-
-    }
-
-
-
-
-
 }
