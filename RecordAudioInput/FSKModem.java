@@ -24,7 +24,7 @@ public class FSKModem {
   public void write(byte bytes[]) {
     for (int i = 0; i < bytes.length; i++) {
       write(bytes[i]);
-      System.out.println("wrote " + bytes[i]);
+      System.out.println("wrote " + (char) bytes[i] + '\t' + bytes[i]);
     }
   }
 
